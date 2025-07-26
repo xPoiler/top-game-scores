@@ -1,27 +1,23 @@
 // Fetches the top games from SteamSpy and ranks them by combined
 // Metacritic and user scores. Results are displayed on the page.
 
-/// Proxy used to work around cross‑origin restrictions. We use the
-/* Proxy used to work around cross-origin restrictions.
-   We use the thingproxy service (https://thingproxy.freeboard.io/)
-   which proxies requests and returns raw responses.
-   The URL to fetch is URL-encoded and appended to this base.
-   A trailing slash is not required here because we construct the full
-   proxy URL in fetchJson.
-*/
+// Proxy used to work around cross‑origin restrictions. We use the
+// thingproxy service (https://thingproxy.freeboard.io/) which proxies
+// requests and returns raw responses. The URL to fetch is appended
+// to this base without encoding. A trailing slash is not required here
+// because we construct the full proxy URL in fetchJson.
 const CORS_PROXY = 'https://thingproxy.freeboard.io/fetch/';
 
-
 // Utility to fetch JSON with error handling via the CORS proxy. The
-// requested URL is encoded and appended to the proxy base. If the
+// requested URL is appended to the proxy base (without encoding). If the
 // fetch fails or returns a non‑OK status, an error is thrown. This
 // function abstracts away the proxy details so callers can provide
 // ordinary URLs from Steam or SteamSpy directly.
 async function fetchJson(url) {
-  // Encode the original URL so it can be safely transmitted as a
-  // query parameter to the proxy. Without encoding, special
-  // characters like & or ? would break the proxy request.
-  const proxyUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+  // Build the proxy URL by concatenating the base and raw URL. For
+  // thingproxy, the URL should remain unencoded; encoding will break
+  // the request.
+  const proxyUrl = `${CORS_PROXY}${url}`;
   const response = await fetch(proxyUrl);
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -169,11 +165,10 @@ async function loadTopGames() {
     const topUrl = 'https://steamspy.com/api.php?request=top100in2weeks';
     const topData = await fetchJson(topUrl);
     const games = Object.values(topData);
- // Limit to the first 25 games to balance coverage and network load.
-    
+    // Limit to the first 25 games to balance coverage and network load.
     // A smaller slice reduces the total number of API calls, improving
     // reliability while still covering a wide range of popular titles.
-  const candidates =   games.slice(0, 10);
+    const candidates = games.slice(0, 25);
     const results = [];
     for (const game of candidates) {
       try {
