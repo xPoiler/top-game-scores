@@ -2,12 +2,13 @@
 // Metacritic and user scores. Results are displayed on the page.
 
 /// Proxy used to work around cross‑origin restrictions. We use the
-// thingproxy service (https://thingproxy.freeboard.io/) which proxies
-// requests and returns raw responses. The URL to fetch is URL‑encoded
-// and appended to this base. A trailing slash is not required here
-// because we construct the full proxy URL in fetchJson.
-/ for details. A trailing slash is not required here because we
-// construct the full proxy URL in fetchJson.
+/* Proxy used to work around cross-origin restrictions.
+   We use the thingproxy service (https://thingproxy.freeboard.io/)
+   which proxies requests and returns raw responses.
+   The URL to fetch is URL-encoded and appended to this base.
+   A trailing slash is not required here because we construct the full
+   proxy URL in fetchJson.
+*/
 const CORS_PROXY = 'https://thingproxy.freeboard.io/fetch/';
 
 
