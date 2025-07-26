@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Top Games – Combined Metacritic &amp; User Scores</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Top Games by Combined Metacritic &amp; User Scores</h1>
+      <p>
+        This page fetches the most popular PC games from Steam and ranks them
+        based on a combination of professional Metacritic scores and Steam user
+        ratings. The data is pulled live via a proxy to avoid cross‑origin
+        restrictions; please allow a few moments for the scores to load.
+      </p>
+    </header>
+    <main id="game-list" class="games-grid">
+      <!-- Game cards will be injected here by script.js -->
+    </main>
+    <footer>
+      <p>
+        Data sourced from
+        <a
+          href="https://steamspy.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          >SteamSpy</a
+        >
+        and
+        <a
+          href="https://store.steampowered.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Steam</a
+        >. This site is for demonstration purposes only.
+      </p>
+    </footer>
+    <script src="script.js"></script>
+  </body>
+</html>
