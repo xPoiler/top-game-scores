@@ -8,7 +8,7 @@
 // because we construct the full proxy URL in fetchJson.
 / for details. A trailing slash is not required here because we
 // construct the full proxy URL in fetchJson.
-cconst CORS_PROXY = 'https://thingproxy.freeboard.io/fetch/';
+ccnst CORS_PROXY = 'https://thingproxy.freeboard.io/fetch/';
 
 
 // Utility to fetch JSON with error handling via the CORS proxy. The
