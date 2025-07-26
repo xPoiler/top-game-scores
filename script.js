@@ -173,7 +173,7 @@ async function loadTopGames() {
     
     // A smaller slice reduces the total number of API calls, improving
     // reliability while still covering a wide range of popular titles.
-    const candidates = games.slice(0, 25);
+  const candidates =   games.slice(0, 10);
     const results = [];
     for (const game of candidates) {
       try {
