@@ -158,8 +158,11 @@ async function loadTopGames() {
     const topUrl = 'https://steamspy.com/api.php?request=top100in2weeks';
     const topData = await fetchJson(topUrl);
     const games = Object.values(topData);
-    // Process only the first 30 entries to keep the number of API calls manageable.
-    const candidates = games.slice(0, 30);
+    // Process all entries returned by SteamSpy. This may result in up to 100
+    // candidates (the default size of the top100in2weeks list). More candidates
+    // increase network load and may take longer to process, but provide a
+    // more comprehensive ranking.
+    const candidates = games;
     const results = [];
     for (const game of candidates) {
       try {
