@@ -1,0 +1,102 @@
+[
+  {
+    "rank": 1,
+    "name": "Half-Life 2",
+    "appid": 220,
+    "metacritic_score": 96,
+    "user_score": 98.31,
+    "combined_score": 194.31,
+    "header_image": "https://cdn.akamai.steamstatic.com/steam/apps/220/header.jpg",
+    "store_url": "https://store.steampowered.com/app/220"
+  },
+  {
+    "rank": 2,
+    "name": "Portal 2",
+    "appid": 620,
+    "metacritic_score": 95,
+    "user_score": 98.88,
+    "combined_score": 193.88,
+    "header_image": "https://cdn.akamai.steamstatic.com/steam/apps/620/header.jpg",
+    "store_url": "https://store.steampowered.com/app/620"
+  },
+  {
+    "rank": 3,
+    "name": "Half-Life",
+    "appid": 70,
+    "metacritic_score": 96,
+    "user_score": 96.51,
+    "combined_score": 192.51,
+    "header_image": "https://cdn.akamai.steamstatic.com/steam/apps/70/header.jpg",
+    "store_url": "https://store.steampowered.com/app/70"
+  },
+  {
+    "rank": 4,
+    "name": "Half-Life: Alyx",
+    "appid": 546560,
+    "metacritic_score": 93,
+    "user_score": 98.99,
+    "combined_score": 191.99,
+    "header_image": "https://cdn.akamai.steamstatic.com/steam/apps/546560/header.jpg",
+    "store_url": "https://store.steampowered.com/app/546560"
+  },
+  {
+    "rank": 5,
+    "name": "The Witcher 3: Wild Hunt",
+    "appid": 292030,
+    "metacritic_score": 93,
+    "user_score": 97.99,
+    "combined_score": 190.99,
+    "header_image": "https://cdn.akamai.steamstatic.com/steam/apps/292030/header.jpg",
+    "store_url": "https://store.steampowered.com/app/292030"
+  },
+  {
+    "rank": 6,
+    "name": "The Elder Scrolls V: Skyrim",
+    "appid": 72850,
+    "metacritic_score": 94,
+    "user_score": 96.82,
+    "combined_score": 190.82,
+    "header_image": "https://cdn.akamai.steamstatic.com/steam/apps/72850/header.jpg",
+    "store_url": "https://store.steampowered.com/app/72850"
+  },
+  {
+    "rank": 7,
+    "name": "Hades",
+    "appid": 1145360,
+    "metacritic_score": 93,
+    "user_score": 97.63,
+    "combined_score": 190.63,
+    "header_image": "https://cdn.akamai.steamstatic.com/steam/apps/1145360/header.jpg",
+    "store_url": "https://store.steampowered.com/app/1145360"
+  },
+  {
+    "rank": 8,
+    "name": "Grand Theft Auto V",
+    "appid": 271590,
+    "metacritic_score": 96,
+    "user_score": 91.4,
+    "combined_score": 187.4,
+    "header_image": "https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg",
+    "store_url": "https://store.steampowered.com/app/271590"
+  },
+  {
+    "rank": 9,
+    "name": "Red Dead Redemption 2",
+    "appid": 1174180,
+    "metacritic_score": 93,
+    "user_score": 93.37,
+    "combined_score": 186.37,
+    "header_image": "https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg",
+    "store_url": "https://store.steampowered.com/app/1174180"
+  },
+  {
+    "rank": 10,
+    "name": "Dark Souls III",
+    "appid": 374320,
+    "metacritic_score": 89,
+    "user_score": 93.18,
+    "combined_score": 182.18,
+    "header_image": "https://cdn.akamai.steamstatic.com/steam/apps/374320/header.jpg",
+    "store_url": "https://store.steampowered.com/app/374320"
+  }
+]
