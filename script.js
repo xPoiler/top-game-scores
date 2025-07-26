@@ -165,8 +165,10 @@ async function loadTopGames() {
     const topUrl = 'https://steamspy.com/api.php?request=top100in2weeks';
     const topData = await fetchJson(topUrl);
     const games = Object.values(topData);
-    // Limit to the first 40 games to balance coverage and network load.
-    const candidates = games.slice(0, 40);
+    // Limit to the first 30 games to balance coverage and network load.
+    // A smaller slice reduces the total number of API calls, improving
+    // reliability while still covering a wide range of popular titles.
+    const candidates = games.slice(0, 30);
     const results = [];
     for (const game of candidates) {
       try {
