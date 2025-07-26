@@ -1,15 +1,30 @@
 // Fetches the top games from SteamSpy and ranks them by combined
 // Metacritic and user scores. Results are displayed on the page.
 
-// In the static version of the site we no longer call external APIs from
-// the browser. Instead we fetch a precomputed JSON file (`top_games.json`)
-// that lives in this repository. This eliminates any reliance on CORS
-// proxies or rate‑limited endpoints and ensures the data loads reliably
-// from GitHub Pages. The JSON contains fields for each game, including
-// `metacritic_score`, `user_score`, `combined_score`, `header_image` and
-// `store_url`. See `top_game_scores_site/top_games.json` for details.
+// We use a custom Cloudflare Worker as a proxy to fetch data from
+// SteamSpy and the Steam store. The worker accepts a `url` query
+// parameter and forwards the request while adding CORS headers. To
+// construct a proxied request, append `encodeURIComponent(originalUrl)`
+// to this base.
+const CORS_PROXY = 'https://topgamescorefetcher.xpoileremmo.workers.dev/?url=';
 
+// Helper to fetch JSON through the proxy. Encodes the target URL as the
+// `url` query parameter. Throws an error on non‑OK responses.
+async function fetchJson(url) {
+  const proxied = `${CORS_PROXY}${encodeURIComponent(url)}`;
+  const response = await fetch(proxied);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  return response.json();
+}
 
+// Compute user score percentage from positive/negative review counts.
+function computeUserScore(positive, negative) {
+  const total = positive + negative;
+  if (total === 0) return null;
+  return (positive / total) * 100;
+}
 
 // Global storage for ranked games and how many to display at once.
 let allResults = [];
@@ -101,38 +116,71 @@ function searchGames(query) {
   });
 }
 
-async function loadGames() {
+// Fetch game details and user reviews for a given app ID. Returns
+// an object with the necessary information or null if either the
+// Metacritic score or user score is missing.
+async function getGameData(appid) {
+  const detailsUrl = `https://store.steampowered.com/api/appdetails?appids=${appid}`;
+  const detailsData = await fetchJson(detailsUrl);
+  const detailEntry = detailsData[appid];
+  if (!detailEntry || !detailEntry.success || !detailEntry.data) {
+    return null;
+  }
+  const data = detailEntry.data;
+  const metacriticScore = data.metacritic && typeof data.metacritic.score === 'number' ? data.metacritic.score : null;
+  if (metacriticScore === null) return null;
+  const reviewsUrl = `https://store.steampowered.com/appreviews/${appid}?json=1&purchase_type=all&language=all`;
+  const reviewsData = await fetchJson(reviewsUrl);
+  if (!reviewsData || !reviewsData.query_summary) return null;
+  const positive = reviewsData.query_summary.total_positive;
+  const negative = reviewsData.query_summary.total_negative;
+  const userScore = computeUserScore(positive, negative);
+  if (userScore === null) return null;
+  const combined = metacriticScore + userScore;
+  return {
+    appid,
+    name: data.name,
+    metacriticScore,
+    userScore,
+    combined,
+    image: data.header_image,
+    url: `https://store.steampowered.com/app/${appid}`,
+  };
+}
+
+// Fetch the list of top games from SteamSpy and build a ranked list
+// based on the sum of Metacritic and user scores. Limits the number of
+// candidates processed to improve performance.
+async function loadTopGames() {
   const listContainer = document.getElementById('game-list');
   listContainer.innerHTML = '<p>Loading data… please wait.</p>';
   try {
-    const response = await fetch('top_games.json');
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    const topUrl = 'https://steamspy.com/api.php?request=top100in2weeks';
+    const topData = await fetchJson(topUrl);
+    const games = Object.values(topData);
+    // Process only the first 30 entries to keep the number of API calls manageable.
+    const candidates = games.slice(0, 30);
+    const results = [];
+    for (const game of candidates) {
+      try {
+        const info = await getGameData(game.appid);
+        if (info) {
+          results.push(info);
+        }
+      } catch (err) {
+        console.error(`Error processing app ${game.appid}:`, err);
+      }
     }
-    const data = await response.json();
-    if (!Array.isArray(data) || data.length === 0) {
-      listContainer.innerHTML = '<p>No games data found.</p>';
+    if (results.length === 0) {
+      listContainer.innerHTML = '<p>No games with both Metacritic and user scores were found.</p>';
       return;
     }
-    // Copy objects and convert property names to match the format used by the
-    // rendering functions. The JSON file uses snake_case keys (e.g.
-    // metacritic_score) so we convert them to camelCase for consistency.
-    allResults = data.map((item) => ({
-      rank: item.rank,
-      name: item.name,
-      appid: item.appid,
-      metacriticScore: item.metacritic_score,
-      userScore: item.user_score,
-      combined: item.combined_score,
-      image: item.header_image,
-      url: item.store_url,
-    }));
-    // Ensure games are sorted by rank just in case the JSON is unordered.
-    allResults.sort((a, b) => a.rank - b.rank);
+    results.sort((a, b) => b.combined - a.combined);
+    allResults = results.map((game, index) => ({ ...game, rank: index + 1 }));
     displayCount = 5;
     renderGames();
   } catch (error) {
-    console.error('Error loading static games data:', error);
+    console.error('Error fetching game list:', error);
     listContainer.innerHTML = '<p>Sorry, there was an error loading the data.</p>';
   }
 }
@@ -153,6 +201,6 @@ window.addEventListener('DOMContentLoaded', () => {
       searchGames(e.target.value);
     });
   }
-  // Load precomputed games from the local JSON file instead of querying APIs.
-  loadGames();
+  // Fetch and rank games from Steam in real time via the Cloudflare proxy.
+  loadTopGames();
 });
