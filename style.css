@@ -81,6 +81,62 @@ header p {
   color: #da3a3a;
 }
 
+/* Controls container for load more button and search input */
+.controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Style the load more button */
+#load-more {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background-color: #1e90ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+#load-more:hover {
+  background-color: #166cd3;
+}
+
+/* Style the search input */
+#search-input {
+  padding: 0.5rem;
+  font-size: 1rem;
+  width: 250px;
+  max-width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Container for search results */
+.search-results {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Add some spacing between search result cards */
+.search-results .game-card {
+  margin-bottom: 1rem;
+}
+
+/* Display rank number next to the game name */
+.rank-badge {
+  font-weight: bold;
+  margin-right: 0.5rem;
+  color: #555;
+}
+
 footer {
   padding: 1rem;
   text-align: center;

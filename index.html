@@ -16,6 +16,24 @@
         restrictions; please allow a few moments for the scores to load.
       </p>
     </header>
+
+    <!-- Controls for loading more results and searching -->
+    <div class="controls">
+      <!-- Button to load additional games. Initially hidden until data is loaded. -->
+      <button id="load-more" style="display: none;">
+        &#x2193; Load more
+      </button>
+      <!-- Search input for finding a game by name. -->
+      <input
+        type="text"
+        id="search-input"
+        placeholder="Search a game…"
+        aria-label="Search games by name"
+      />
+    </div>
+
+    <!-- Container where search results will be displayed. Hidden by default. -->
+    <div id="search-results" class="search-results" style="display: none;"></div>
     <main id="game-list" class="games-grid">
       <!-- Game cards will be injected here by script.js -->
     </main>

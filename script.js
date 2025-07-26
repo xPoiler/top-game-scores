@@ -32,6 +32,96 @@ function computeUserScore(positive, negative) {
   return (positive / total) * 100;
 }
 
+// Global storage for ranked games and how many to display at once.
+let allResults = [];
+let displayCount = 5;
+
+/**
+ * Render a subset of the ranked games into the game list container. The
+ * number of games displayed is controlled by the global displayCount
+ * variable. This function also updates the visibility of the "load more"
+ * button depending on whether additional games remain to be shown.
+ */
+function renderGames() {
+  const listContainer = document.getElementById('game-list');
+  listContainer.innerHTML = '';
+  const subset = allResults.slice(0, displayCount);
+  subset.forEach((game) => {
+    const card = document.createElement('div');
+    card.className = 'game-card';
+    card.innerHTML = `
+      <img src="${game.image}" alt="${game.name}" />
+      <div class="game-content">
+        <h2><span class="rank-badge">#${game.rank}</span><a href="${game.url}" target="_blank" rel="noopener noreferrer">${game.name}</a></h2>
+        <div class="scores">
+          <span class="metacritic">Metacritic: ${game.metacriticScore}</span>
+          <span class="user-score">User: ${game.userScore.toFixed(1)}%</span>
+        </div>
+      </div>
+    `;
+    listContainer.appendChild(card);
+  });
+  const loadMoreBtn = document.getElementById('load-more');
+  if (loadMoreBtn) {
+    if (displayCount >= allResults.length) {
+      loadMoreBtn.style.display = 'none';
+    } else {
+      loadMoreBtn.style.display = 'inline-block';
+    }
+  }
+}
+
+/**
+ * Populate search results based on a query string. When a query is
+ * provided, the main game list and load more button are hidden and only
+ * matching results are shown. When the query is empty, the search
+ * results are hidden and the main list is shown again.
+ *
+ * @param {string} query The user’s search term.
+ */
+function searchGames(query) {
+  const listContainer = document.getElementById('game-list');
+  const loadMoreBtn = document.getElementById('load-more');
+  const searchContainer = document.getElementById('search-results');
+  if (!searchContainer) return;
+  const trimmed = query.trim().toLowerCase();
+  if (trimmed === '') {
+    searchContainer.style.display = 'none';
+    searchContainer.innerHTML = '';
+    listContainer.style.display = '';
+    if (displayCount < allResults.length) {
+      if (loadMoreBtn) loadMoreBtn.style.display = 'inline-block';
+    } else {
+      if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+    }
+    return;
+  }
+  const matches = allResults.filter((game) => game.name.toLowerCase().includes(trimmed));
+  listContainer.style.display = 'none';
+  if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+  searchContainer.style.display = 'block';
+  searchContainer.innerHTML = '';
+  if (matches.length === 0) {
+    searchContainer.innerHTML = '<p>No results found.</p>';
+    return;
+  }
+  matches.forEach((game) => {
+    const card = document.createElement('div');
+    card.className = 'game-card';
+    card.innerHTML = `
+      <img src="${game.image}" alt="${game.name}" />
+      <div class="game-content">
+        <h2><span class="rank-badge">#${game.rank}</span><a href="${game.url}" target="_blank" rel="noopener noreferrer">${game.name}</a></h2>
+        <div class="scores">
+          <span class="metacritic">Metacritic: ${game.metacriticScore}</span>
+          <span class="user-score">User: ${game.userScore.toFixed(1)}%</span>
+        </div>
+      </div>
+    `;
+    searchContainer.appendChild(card);
+  });
+}
+
 async function getGameData(appid) {
   // Fetch game details (including Metacritic score) from the Steam store API.
   // We pass the raw URL into fetchJson; it will be proxied automatically.
@@ -72,16 +162,12 @@ async function loadTopGames() {
   // Show loading message.
   listContainer.innerHTML = '<p>Loading data… please wait.</p>';
   try {
-    // Get top games list from SteamSpy. Provide the raw URL; fetchJson
-    // will proxy it through AllOrigins.
     const topUrl = 'https://steamspy.com/api.php?request=top100in2weeks';
     const topData = await fetchJson(topUrl);
     const games = Object.values(topData);
-    // Limit to the first 25 games to reduce network load while still capturing many popular titles.
-    // Fetching too many games can lead to timeouts or rate limiting on the free proxy service.
-    const candidates = games.slice(0, 25);
+    // Limit to the first 40 games to balance coverage and network load.
+    const candidates = games.slice(0, 40);
     const results = [];
-    // Iterate sequentially to avoid spamming the API too quickly.
     for (const game of candidates) {
       try {
         const info = await getGameData(game.appid);
@@ -96,30 +182,33 @@ async function loadTopGames() {
       listContainer.innerHTML = '<p>No games with both Metacritic and user scores were found.</p>';
       return;
     }
-    // Sort descending by combined score and take top 10.
+    // Sort and assign rank.
     results.sort((a, b) => b.combined - a.combined);
-    const top10 = results.slice(0, 10);
-    // Build the HTML for each game card.
-    listContainer.innerHTML = '';
-    for (const game of top10) {
-      const card = document.createElement('div');
-      card.className = 'game-card';
-      card.innerHTML = `
-        <img src="${game.image}" alt="${game.name}" />
-        <div class="game-content">
-          <h2><a href="${game.url}" target="_blank" rel="noopener noreferrer">${game.name}</a></h2>
-          <div class="scores">
-            <span class="metacritic">Metacritic: ${game.metacriticScore}</span>
-            <span class="user-score">User: ${game.userScore.toFixed(1)}%</span>
-          </div>
-        </div>
-      `;
-      listContainer.appendChild(card);
-    }
+    allResults = results.map((game, index) => ({ ...game, rank: index + 1 }));
+    // Reset display count and render initial set.
+    displayCount = 5;
+    renderGames();
   } catch (error) {
     console.error('Error fetching game list:', error);
     listContainer.innerHTML = '<p>Sorry, there was an error loading the data.</p>';
   }
 }
 
-window.addEventListener('DOMContentLoaded', loadTopGames);
+// Attach DOMContentLoaded handler to wire up controls and load data.
+window.addEventListener('DOMContentLoaded', () => {
+  const loadMoreBtn = document.getElementById('load-more');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', () => {
+      // Increase display count by 5 each time and re-render the list.
+      displayCount += 5;
+      renderGames();
+    });
+  }
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchGames(e.target.value);
+    });
+  }
+  loadTopGames();
+});
