@@ -26,24 +26,16 @@ function computeUserScore(positive, negative) {
   return (positive / total) * 100;
 }
 
-// Global storage for ranked games and candidate games. When a batch of
-// candidates is processed, valid games are pushed into `allResults`.
+// Global storage for ranked games.
 let allResults = [];
-let candidateList = [];
-let candidateIndex = 0;
-let candidatePage = 1;
 
 /**
  * Render the currently loaded ranked games into the game list container.
- * Unlike earlier versions that limited the number of visible games using
- * `displayCount`, this implementation shows all games currently present
- * in `allResults`. It also updates the visibility of the "load more" button
- * depending on whether more candidates remain to be processed.
+ * This function displays all games present in `allResults`.
  */
 function renderGames() {
   const listContainer = document.getElementById('game-list');
   listContainer.innerHTML = '';
-  // Render every game currently in allResults
   allResults.forEach((game) => {
     const card = document.createElement('div');
     card.className = 'game-card';
@@ -59,113 +51,52 @@ function renderGames() {
     `;
     listContainer.appendChild(card);
   });
-  // Show or hide the load‑more button depending on whether more candidates remain.
+
+  // Hide the "load more" button as all top games are loaded at once.
   const loadMoreBtn = document.getElementById('load-more');
   if (loadMoreBtn) {
-    if (candidateIndex >= candidateList.length) {
-      loadMoreBtn.style.display = 'none';
-    } else {
-      loadMoreBtn.style.display = 'inline-block';
-    }
+    loadMoreBtn.style.display = 'none';
   }
 }
 
 /**
- * Populate search results based on a query string. When a query is
- * provided, the main game list and load more button are hidden and only
- * matching results are shown. When the query is empty, the search
- * results are hidden and the main list is shown again.
- *
- * @param {string} query The user’s search term.
- */
-/**
  * Search for games by name. If the query is empty, the main list is shown and
  * the search results are hidden. When a query is provided, this function
- * first searches within the currently loaded results (`allResults`). If no
- * matches are found, it attempts to fetch additional pages from SteamSpy and
- * find games whose names include the query. Only a limited number of pages
- * and results are processed to avoid excessive network load. Found games are
- * ranked relative to the combined list of already loaded results and the
- * search results so that a reasonable rank can be displayed.
+ * searches within the currently loaded results (`allResults`).
  *
  * @param {string} query The user’s search term.
  */
 async function searchGames(query) {
   const listContainer = document.getElementById('game-list');
-  const loadMoreBtn = document.getElementById('load-more');
   const searchContainer = document.getElementById('search-results');
   if (!searchContainer) return;
+
   const trimmed = query.trim().toLowerCase();
-  // When the query is empty, restore the main list and button.
+
+  // When the query is empty, restore the main list.
   if (trimmed === '') {
     searchContainer.style.display = 'none';
     searchContainer.innerHTML = '';
     listContainer.style.display = '';
-    // Re-render to update the load more button visibility based on current
-    // candidate state.
     renderGames();
     return;
   }
-  // Hide the main list and load‑more button while searching.
+
+  // Hide the main list while searching.
   listContainer.style.display = 'none';
-  if (loadMoreBtn) loadMoreBtn.style.display = 'none';
   searchContainer.style.display = 'block';
-  // Show a temporary message while performing the search.
-  searchContainer.innerHTML = '<p>Searching… please wait.</p>';
-  // First search within the already loaded results.
+  searchContainer.innerHTML = '<p>Searching…</p>';
+
   const localMatches = allResults.filter((game) => game.name.toLowerCase().includes(trimmed));
-  let results = [];
-  // If any matches are found locally, we use them directly.
-  if (localMatches.length > 0) {
-    results = localMatches;
-  } else {
-    // Otherwise, attempt to find matches by scanning additional pages from SteamSpy.
-    const MAX_SEARCH_PAGES = 5; // Limit pages scanned to avoid long searches
-    const MAX_SEARCH_RESULTS = 10; // Limit the number of search results returned
-    let page = 1;
-    while (page <= MAX_SEARCH_PAGES && results.length < MAX_SEARCH_RESULTS) {
-      try {
-        const pageData = await fetchJson(`https://steamspy.com/api.php?request=all&page=${page}`);
-        const entries = Object.values(pageData);
-        for (const entry of entries) {
-          if (results.length >= MAX_SEARCH_RESULTS) break;
-          if (entry.name && entry.name.toLowerCase().includes(trimmed)) {
-            try {
-              const info = await getGameData(entry.appid);
-              if (info) {
-                results.push(info);
-              }
-            } catch (err) {
-              console.error(`Error fetching data for search app ${entry.appid}:`, err);
-            }
-          }
-        }
-      } catch (err) {
-        console.error(`Error loading search page ${page}:`, err);
-      }
-      page++;
-    }
-  }
-  // Clear previous content
+
   searchContainer.innerHTML = '';
-  if (results.length === 0) {
-    searchContainer.innerHTML = '<p>No results found.</p>';
+  if (localMatches.length === 0) {
+    searchContainer.innerHTML = '<p>No results found in the top 100.</p>';
     return;
   }
-  // Compute ranks relative to existing results. We create a combined list
-  // including the current allResults and the search results, then sort it
-  // by combined score descending. Each search result’s rank is determined by
-  // its position in this combined list.
-  const combinedList = allResults.concat(results);
-  combinedList.sort((a, b) => b.combined - a.combined);
-  const rankMap = new Map();
-  combinedList.forEach((game, idx) => {
-    rankMap.set(game.appid, idx + 1);
-  });
-  // Assign ranks and sort search results by rank ascending.
-  const rankedResults = results.map((game) => ({ ...game, rank: rankMap.get(game.appid) })).sort((a, b) => a.rank - b.rank);
-  // Render the search results
-  rankedResults.forEach((game) => {
+
+  // Render search results.
+  localMatches.forEach((game) => {
     const card = document.createElement('div');
     card.className = 'game-card';
     card.innerHTML = `
@@ -214,74 +145,30 @@ async function getGameData(appid) {
   };
 }
 
-// Load a page of candidate game entries from SteamSpy. Each page of the
-// `all` request returns a large object where keys are app IDs and values
-// contain basic information including the `appid` and `name`. We convert
-// this object into an array and append it to `candidateList`.
-async function loadCandidatePage(page) {
-  const url = `https://steamspy.com/api.php?request=all&page=${page}`;
-  const data = await fetchJson(url);
-  const entries = Object.values(data);
-  // Append new candidates to the list
-  candidateList = candidateList.concat(entries);
-}
-
-// Process the next batch of candidate games. For each candidate, we call
-// `getGameData` to retrieve Metacritic and user scores. Only games with
-// both scores are added to `allResults`. When the end of the current
-// candidateList is reached, this function attempts to load the next page
-// of candidates automatically. After processing, the results are sorted
-// and ranked, and `renderGames()` is called to update the UI.
-async function loadNextBatch(batchSize = 10) {
-  const listContainer = document.getElementById('game-list');
-  if (!candidateList.length || candidateIndex >= candidateList.length) {
-    // If we've exhausted the current candidate list, try to fetch the next page.
-    candidatePage += 1;
-    try {
-      await loadCandidatePage(candidatePage);
-    } catch (err) {
-      console.error('Error loading additional candidate page:', err);
-      return;
-    }
-  }
-  let added = 0;
-  // Process candidates until we've added the desired number of games or run out
-  while (added < batchSize && candidateIndex < candidateList.length) {
-    const cand = candidateList[candidateIndex++];
-    try {
-      const info = await getGameData(cand.appid);
-      if (info) {
-        allResults.push(info);
-        added++;
-      }
-    } catch (err) {
-      console.error(`Error processing app ${cand.appid}:`, err);
-    }
-  }
-  if (added > 0) {
-    // Sort by combined score descending and assign ranks
-    allResults.sort((a, b) => b.combined - a.combined);
-    allResults = allResults.map((game, idx) => ({ ...game, rank: idx + 1 }));
-    renderGames();
-  }
-}
-
 // Fetch the list of top games from SteamSpy and build a ranked list
-// based on the sum of Metacritic and user scores. Limits the number of
-// candidates processed to improve performance.
+// based on the sum of Metacritic and user scores.
 async function loadTopGames() {
   const listContainer = document.getElementById('game-list');
   listContainer.innerHTML = '<p>Loading data… please wait.</p>';
+
   try {
-    // Reset global state
-    allResults = [];
-    candidateList = [];
-    candidateIndex = 0;
-    candidatePage = 1;
-    // Load the first page of candidates from SteamSpy (all games)
-    await loadCandidatePage(candidatePage);
-    // Fetch the first batch of games to display
-    await loadNextBatch(10);
+    // Fetch the top 100 games from the last 2 weeks from SteamSpy.
+    const url = 'https://steamspy.com/api.php?request=top100in2weeks';
+    const candidateData = await fetchJson(url);
+    const candidates = Object.values(candidateData);
+
+    // Process all candidates.
+    const gamePromises = candidates.map(cand => getGameData(cand.appid));
+    const games = await Promise.all(gamePromises);
+
+    // Filter out games that couldn't be fetched or are missing scores.
+    const validGames = games.filter(game => game !== null);
+
+    // Sort by combined score descending and assign ranks.
+    validGames.sort((a, b) => b.combined - a.combined);
+    allResults = validGames.map((game, idx) => ({ ...game, rank: idx + 1 }));
+
+    renderGames();
   } catch (error) {
     console.error('Error initializing game list:', error);
     listContainer.innerHTML = '<p>Sorry, there was an error loading the data.</p>';
@@ -290,19 +177,13 @@ async function loadTopGames() {
 
 // Attach DOMContentLoaded handler to wire up controls and load data.
 window.addEventListener('DOMContentLoaded', () => {
-  const loadMoreBtn = document.getElementById('load-more');
-  if (loadMoreBtn) {
-    loadMoreBtn.addEventListener('click', () => {
-      // Fetch the next batch of games on demand.
-      loadNextBatch(10);
-    });
-  }
   const searchInput = document.getElementById('search-input');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       searchGames(e.target.value);
     });
   }
+
   // Fetch and rank games from Steam in real time via the Cloudflare proxy.
   loadTopGames();
 });
