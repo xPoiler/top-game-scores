@@ -10,20 +10,15 @@
     <header>
       <h1>Top Games by Combined Metacritic &amp; User Scores</h1>
       <p>
-        This page fetches the most popular PC games from Steam and ranks them
-        based on a combination of professional Metacritic scores and Steam user
-        ratings. Data is retrieved in real time via a Cloudflare Worker
-        proxy to avoid cross‑origin restrictions; please allow a few moments
-        for the scores to load.
+        This page fetches the 100 most-played PC games from the last two weeks
+        and ranks them based on a combination of professional Metacritic scores
+        and Steam user ratings. Data is retrieved in real time, so please allow
+        a few moments for the scores to load.
       </p>
     </header>
 
-    <!-- Controls for loading more results and searching -->
+    <!-- Controls for searching -->
     <div class="controls">
-      <!-- Button to load additional games. Initially hidden until data is loaded. -->
-      <button id="load-more" style="display: none;">
-        &#x2193; Load more
-      </button>
       <!-- Search input for finding a game by name. -->
       <input
         type="text"
