@@ -152,8 +152,8 @@ async function loadTopGames() {
   listContainer.innerHTML = '<p>Loading data… please wait.</p>';
 
   try {
-    // Fetch the top 100 games from the last 2 weeks from SteamSpy.
-    const url = 'https://steamspy.com/api.php?request=top100in2weeks';
+    // Fetch the top 100 games of all time from SteamSpy.
+    const url = 'https://steamspy.com/api.php?request=top100forever';
     const candidateData = await fetchJson(url);
     const candidates = Object.values(candidateData);
 
